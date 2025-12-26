@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QR Attendance System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">QR Attendance</div>
+
+    <ul class="nav-links">
+        <li>
+            <strong>About</strong><br>
+            Akash Kumar<br>
+            B.Tech CSE Student<br>
+            Roll: 2024UCP1444
+        </li>
+
+        <li>
+            <strong>Contact</strong><br>
+            ✉️ akashkumar.cse24@gmail.com
+        </li>
+    </ul>
+</nav>
+
+<button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+<div id="toast" class="toast"></div>
+
+<section class="hero">
+    <div class="hero-left">
+        <h1>QR Based Attendance System</h1>
+        <p>
+            A secure, location-based attendance system using
+            QR codes and Google Sheets.
+        </p>
+
+        <div class="form-card">
+            <input type="text" id="name" placeholder="Enter Name">
+            <input type="text" id="roll" placeholder="Enter Roll Number">
+            <button onclick="markAttendance()">Mark Attendance</button>
+            <p id="status"></p>
+        </div>
+    </div>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
