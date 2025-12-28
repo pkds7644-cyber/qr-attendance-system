@@ -1,3 +1,5 @@
+require("dotenv").config(); // ✅ ADDED
+
 const express = require("express");
 const cors = require("cors");
 const session = require("express-session");
@@ -12,14 +14,14 @@ app.use(cors({
 app.use(express.json());
 
 app.use(session({
-  secret: "admin-secret",
+  secret: process.env.SESSION_SECRET, // ✅ CHANGED
   resave: false,
   saveUninitialized: false
 }));
 
 /* GOOGLE SHEETS */
 const auth = new google.auth.GoogleAuth({
-  keyFile: "credentials.json",
+  credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS), // ✅ CHANGED
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
@@ -36,10 +38,10 @@ const ADMIN = {
 /* QR SESSIONS */
 const sessions = {};
 
-/* ================= DISTANCE FUNCTION (ADDED) ================= */
+/* ================= DISTANCE FUNCTION ================= */
 
 function getDistanceInMeters(lat1, lon1, lat2, lon2) {
-  const R = 6371000; // Earth radius in meters
+  const R = 6371000;
   const toRad = deg => deg * Math.PI / 180;
 
   const dLat = toRad(lat2 - lat1);
@@ -105,7 +107,6 @@ app.post("/attendance", async (req, res) => {
       return res.json({ success: false, message: "QR expired" });
     }
 
-    /* ✅ LOCATION VALIDATION (50 METERS) */
     const distance = getDistanceInMeters(
       session.latitude,
       session.longitude,
@@ -163,8 +164,6 @@ app.get("/admin/attendance", checkAdmin, async (req, res) => {
   });
   res.json(data.data.values || []);
 });
-
-/* ================= EXCEL-SAFE CSV DOWNLOAD ================= */
 
 app.get("/admin/download", checkAdmin, async (req, res) => {
   const data = await sheets.spreadsheets.values.get({
