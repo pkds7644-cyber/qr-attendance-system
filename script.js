@@ -9,7 +9,7 @@ function markAttendance() {
   const status = document.getElementById("status");
 
   navigator.geolocation.getCurrentPosition(pos => {
-    fetch("http://localhost:3000/attendance", {
+    fetch("https://qr-attendance-backend-bmgt.onrender.com/attendance", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -23,7 +23,12 @@ function markAttendance() {
     .then(res => res.json())
     .then(data => {
       status.innerText = data.message;
+    })
+    .catch(() => {
+      status.innerText = "Server error. Please try again.";
     });
+  }, () => {
+    status.innerText = "Location permission denied";
   });
 }
 
