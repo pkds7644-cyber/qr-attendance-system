@@ -8,7 +8,7 @@ function generateQR() {
 
   navigator.geolocation.getCurrentPosition(
     (pos) => {
-      fetch("http://localhost:3000/start-session", {
+      fetch("https://qr-attendance-backend-bmgt.onrender.com/start-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -21,8 +21,9 @@ function generateQR() {
       .then(data => {
         qrStatus.innerText = "QR Generated (Valid for 5 minutes)";
 
+        // 🔴 LIVE FRONTEND URL (GitHub Pages)
         const qrURL =
-          `http://localhost:5500/?sessionId=${data.sessionId}`;
+          `https://pkds7644-cyber.github.io/qr-attendance-system/?sessionId=${data.sessionId}`;
 
         qrImage.src =
           `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrURL)}`;
@@ -39,7 +40,7 @@ function generateQR() {
 
 /* ================= LOAD ATTENDANCE ================= */
 
-fetch("http://localhost:3000/admin/attendance", {
+fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/attendance", {
   credentials: "include"
 })
 .then(res => {
@@ -68,13 +69,13 @@ fetch("http://localhost:3000/admin/attendance", {
 /* ================= DOWNLOAD CSV ================= */
 
 function downloadCSV() {
-  window.open("http://localhost:3000/admin/download");
+  window.open("https://qr-attendance-backend-bmgt.onrender.com/admin/download");
 }
 
 /* ================= LOGOUT ================= */
 
 function logout() {
-  fetch("http://localhost:3000/admin/logout", {
+  fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/logout", {
     method: "POST",
     credentials: "include"
   }).then(() => {
@@ -84,7 +85,7 @@ function logout() {
 
 /* ================= ANALYTICS ================= */
 
-fetch("http://localhost:3000/admin/analytics", {
+fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/analytics", {
   credentials: "include"
 })
 .then(res => res.json())
