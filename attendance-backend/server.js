@@ -1,4 +1,4 @@
-require("dotenv").config(); // ✅ ADDED
+require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
@@ -7,35 +7,52 @@ const { google } = require("googleapis");
 const { v4: uuidv4 } = require("uuid");
 
 const app = express();
+
+/* ================= CORS (PRODUCTION) ================= */
+
 app.use(cors({
-  origin: true,
+  origin: "https://pkds7644-cyber.github.io", // ✅ GitHub Pages domain
   credentials: true
 }));
+
 app.use(express.json());
 
+/* ================= SESSION (FIXED FOR CROSS-SITE) ================= */
+
 app.use(session({
-  secret: process.env.SESSION_SECRET, // ✅ CHANGED
+  name: "qr-attendance-session",
+  secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  cookie: {
+    secure: true,          // required for HTTPS (Render)
+    sameSite: "none",      // allow cross-site cookies
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 // 1 hour
+  }
 }));
 
-/* GOOGLE SHEETS */
+/* ================= GOOGLE SHEETS ================= */
+
 const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS), // ✅ CHANGED
+  credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS),
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
 const sheets = google.sheets({ version: "v4", auth });
+
 const SPREADSHEET_ID = "1eisbaQ237bb-j6o9WsjYOPaOcvIiQe8flK9ojs5bqOI";
 const SHEET_NAME = "Sheet1";
 
-/* ADMIN CREDENTIALS */
+/* ================= ADMIN CREDENTIALS ================= */
+
 const ADMIN = {
   username: "admin",
   password: "admin123"
 };
 
-/* QR SESSIONS */
+/* ================= QR SESSIONS ================= */
+
 const sessions = {};
 
 /* ================= DISTANCE FUNCTION ================= */
@@ -53,14 +70,14 @@ function getDistanceInMeters(lat1, lon1, lat2, lon2) {
     Math.cos(toRad(lat2)) *
     Math.sin(dLon / 2) ** 2;
 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/* ================= ADMIN LOGIN ================= */
+/* ================= ADMIN AUTH ================= */
 
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
+
   if (username === ADMIN.username && password === ADMIN.password) {
     req.session.isAdmin = true;
     return res.json({ success: true });
@@ -69,8 +86,9 @@ app.post("/admin/login", (req, res) => {
 });
 
 app.post("/admin/logout", (req, res) => {
-  req.session.destroy();
-  res.json({ success: true });
+  req.session.destroy(() => {
+    res.json({ success: true });
+  });
 });
 
 function checkAdmin(req, res, next) {
@@ -78,10 +96,11 @@ function checkAdmin(req, res, next) {
   else res.status(401).json({ error: "Unauthorized" });
 }
 
-/* ================= START SESSION ================= */
+/* ================= START QR SESSION ================= */
 
 app.post("/start-session", (req, res) => {
   const { latitude, longitude } = req.body;
+
   if (!latitude || !longitude) {
     return res.status(400).json({ error: "Location missing" });
   }
@@ -90,7 +109,7 @@ app.post("/start-session", (req, res) => {
   sessions[sessionId] = {
     latitude,
     longitude,
-    expiresAt: Date.now() + 5 * 60 * 1000,
+    expiresAt: Date.now() + 5 * 60 * 1000
   };
 
   res.json({ sessionId });
@@ -102,14 +121,14 @@ app.post("/attendance", async (req, res) => {
   try {
     const { name, roll, latitude, longitude, sessionId } = req.body;
 
-    const session = sessions[sessionId];
-    if (!session || Date.now() > session.expiresAt) {
+    const qrSession = sessions[sessionId];
+    if (!qrSession || Date.now() > qrSession.expiresAt) {
       return res.json({ success: false, message: "QR expired" });
     }
 
     const distance = getDistanceInMeters(
-      session.latitude,
-      session.longitude,
+      qrSession.latitude,
+      qrSession.longitude,
       latitude,
       longitude
     );
@@ -151,6 +170,7 @@ app.post("/attendance", async (req, res) => {
 
     res.json({ success: true, message: "Attendance marked successfully" });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false });
   }
 });
@@ -164,6 +184,8 @@ app.get("/admin/attendance", checkAdmin, async (req, res) => {
   });
   res.json(data.data.values || []);
 });
+
+/* ================= CSV DOWNLOAD (EXCEL SAFE) ================= */
 
 app.get("/admin/download", checkAdmin, async (req, res) => {
   const data = await sheets.spreadsheets.values.get({
@@ -186,7 +208,7 @@ app.get("/admin/download", checkAdmin, async (req, res) => {
   res.send(csv);
 });
 
-/* ================= ATTENDANCE ANALYTICS ================= */
+/* ================= ANALYTICS ================= */
 
 app.get("/admin/analytics", checkAdmin, async (req, res) => {
   const data = await sheets.spreadsheets.values.get({
@@ -220,10 +242,9 @@ app.get("/admin/analytics", checkAdmin, async (req, res) => {
   });
 
   const today = new Date().toISOString().split("T")[0];
-  const todayCount = attendanceByDate[today] || 0;
 
   res.json({
-    todayCount,
+    todayCount: attendanceByDate[today] || 0,
     totalDays,
     attendanceByDate,
     attendanceByStudent: Object.values(attendanceByStudent)
@@ -232,6 +253,7 @@ app.get("/admin/analytics", checkAdmin, async (req, res) => {
 
 /* ================= START SERVER ================= */
 
-app.listen(3000, () => {
-  console.log("✅ Server running at http://localhost:3000");
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
 });
