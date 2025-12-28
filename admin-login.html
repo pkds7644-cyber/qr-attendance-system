@@ -53,8 +53,9 @@ function login() {
 
   fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/login", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include", // ✅ VERY IMPORTANT
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({
       username: document.getElementById("username").value,
       password: document.getElementById("password").value
@@ -62,7 +63,11 @@ function login() {
   })
   .then(res => res.json())
   .then(data => {
-    if (data.success) {
+    if (data.success && data.token) {
+      // ✅ STORE TOKEN
+      localStorage.setItem("adminToken", data.token);
+
+      // ✅ GO TO DASHBOARD
       window.location.href = "admin.html";
     } else {
       msg.innerText = "Invalid credentials";

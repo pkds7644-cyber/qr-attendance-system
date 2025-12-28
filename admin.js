@@ -1,6 +1,15 @@
 const qrStatus = document.getElementById("qrStatus");
 const qrImage = document.getElementById("qrImage");
 
+/* ================= AUTH TOKEN ================= */
+
+const token = localStorage.getItem("adminToken");
+
+// 🔒 If token missing → force login
+if (!token) {
+  window.location.href = "admin-login.html";
+}
+
 /* ================= GENERATE QR ================= */
 
 function generateQR() {
@@ -10,8 +19,10 @@ function generateQR() {
     (pos) => {
       fetch("https://qr-attendance-backend-bmgt.onrender.com/start-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
         body: JSON.stringify({
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude
@@ -21,7 +32,6 @@ function generateQR() {
       .then(data => {
         qrStatus.innerText = "QR Generated (Valid for 5 minutes)";
 
-        // 🔴 LIVE FRONTEND URL (GitHub Pages)
         const qrURL =
           `https://pkds7644-cyber.github.io/qr-attendance-system/?sessionId=${data.sessionId}`;
 
@@ -41,10 +51,13 @@ function generateQR() {
 /* ================= LOAD ATTENDANCE ================= */
 
 fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/attendance", {
-  credentials: "include"
+  headers: {
+    "Authorization": "Bearer " + token
+  }
 })
 .then(res => {
   if (res.status === 401) {
+    localStorage.removeItem("adminToken");
     window.location.href = "admin-login.html";
     return;
   }
@@ -52,8 +65,10 @@ fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/attendance", {
 })
 .then(data => {
   if (!data) return;
+
   const tbody = document.querySelector("#attendanceTable tbody");
   tbody.innerHTML = "";
+
   data.slice(1).forEach(r => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -69,34 +84,45 @@ fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/attendance", {
 /* ================= DOWNLOAD CSV ================= */
 
 function downloadCSV() {
-  window.open("https://qr-attendance-backend-bmgt.onrender.com/admin/download");
+  window.open(
+    "https://qr-attendance-backend-bmgt.onrender.com/admin/download",
+    "_blank",
+    {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    }
+  );
 }
 
 /* ================= LOGOUT ================= */
 
 function logout() {
-  fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/logout", {
-    method: "POST",
-    credentials: "include"
-  }).then(() => {
-    window.location.href = "admin-login.html";
-  });
+  localStorage.removeItem("adminToken");
+  window.location.href = "admin-login.html";
 }
 
 /* ================= ANALYTICS ================= */
 
 fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/analytics", {
-  credentials: "include"
+  headers: {
+    "Authorization": "Bearer " + token
+  }
 })
-.then(res => res.json())
+.then(res => {
+  if (res.status === 401) {
+    localStorage.removeItem("adminToken");
+    window.location.href = "admin-login.html";
+    return;
+  }
+  return res.json();
+})
 .then(data => {
   if (!data) return;
 
-  // Today count
   document.getElementById("todayCount").innerText = data.todayCount;
   document.getElementById("totalDays").innerText = data.totalDays;
 
-  // Calendar
   const calendar = document.getElementById("calendar");
   calendar.innerHTML = "";
 
@@ -110,7 +136,6 @@ fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/analytics", {
     calendar.appendChild(box);
   });
 
-  // Store for filtering
   window.studentAnalytics = data.attendanceByStudent;
 });
 

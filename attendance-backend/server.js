@@ -2,35 +2,19 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
-const session = require("express-session");
 const { google } = require("googleapis");
 const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 
-/* ================= CORS (PRODUCTION) ================= */
+/* ================= CORS ================= */
 
 app.use(cors({
-  origin: "https://pkds7644-cyber.github.io", // ✅ GitHub Pages domain
+  origin: "https://pkds7644-cyber.github.io",
   credentials: true
 }));
 
 app.use(express.json());
-
-/* ================= SESSION (FIXED FOR CROSS-SITE) ================= */
-
-app.use(session({
-  name: "qr-attendance-session",
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: true,          // required for HTTPS (Render)
-    sameSite: "none",      // allow cross-site cookies
-    httpOnly: true,
-    maxAge: 1000 * 60 * 60 // 1 hour
-  }
-}));
 
 /* ================= GOOGLE SHEETS ================= */
 
@@ -44,12 +28,15 @@ const sheets = google.sheets({ version: "v4", auth });
 const SPREADSHEET_ID = "1eisbaQ237bb-j6o9WsjYOPaOcvIiQe8flK9ojs5bqOI";
 const SHEET_NAME = "Sheet1";
 
-/* ================= ADMIN CREDENTIALS ================= */
+/* ================= ADMIN CONFIG ================= */
 
 const ADMIN = {
   username: "admin",
   password: "admin123"
 };
+
+// simple static token (demo-grade, reliable)
+const ADMIN_TOKEN = "QR_ADMIN_TOKEN_2025";
 
 /* ================= QR SESSIONS ================= */
 
@@ -73,27 +60,31 @@ function getDistanceInMeters(lat1, lon1, lat2, lon2) {
   return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/* ================= ADMIN AUTH ================= */
+/* ================= ADMIN LOGIN ================= */
 
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
 
   if (username === ADMIN.username && password === ADMIN.password) {
-    req.session.isAdmin = true;
-    return res.json({ success: true });
+    return res.json({
+      success: true,
+      token: ADMIN_TOKEN
+    });
   }
+
   res.json({ success: false });
 });
 
-app.post("/admin/logout", (req, res) => {
-  req.session.destroy(() => {
-    res.json({ success: true });
-  });
-});
+/* ================= ADMIN AUTH MIDDLEWARE ================= */
 
 function checkAdmin(req, res, next) {
-  if (req.session.isAdmin) next();
-  else res.status(401).json({ error: "Unauthorized" });
+  const authHeader = req.headers.authorization;
+
+  if (authHeader === `Bearer ${ADMIN_TOKEN}`) {
+    next();
+  } else {
+    res.status(401).json({ error: "Unauthorized" });
+  }
 }
 
 /* ================= START QR SESSION ================= */
@@ -185,8 +176,6 @@ app.get("/admin/attendance", checkAdmin, async (req, res) => {
   res.json(data.data.values || []);
 });
 
-/* ================= CSV DOWNLOAD (EXCEL SAFE) ================= */
-
 app.get("/admin/download", checkAdmin, async (req, res) => {
   const data = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
@@ -207,8 +196,6 @@ app.get("/admin/download", checkAdmin, async (req, res) => {
   res.setHeader("Content-Disposition", "attachment; filename=attendance.csv");
   res.send(csv);
 });
-
-/* ================= ANALYTICS ================= */
 
 app.get("/admin/analytics", checkAdmin, async (req, res) => {
   const data = await sheets.spreadsheets.values.get({
