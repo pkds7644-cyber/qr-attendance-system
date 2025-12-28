@@ -49,19 +49,27 @@
 
 <script>
 function login() {
-  fetch("http://localhost:3000/admin/login", {
+  const msg = document.getElementById("msg");
+
+  fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
+    credentials: "include", // ✅ VERY IMPORTANT
     body: JSON.stringify({
-      username: username.value,
-      password: password.value
+      username: document.getElementById("username").value,
+      password: document.getElementById("password").value
     })
   })
   .then(res => res.json())
   .then(data => {
-    if (data.success) window.location.href = "admin.html";
-    else msg.innerText = "Invalid credentials";
+    if (data.success) {
+      window.location.href = "admin.html";
+    } else {
+      msg.innerText = "Invalid credentials";
+    }
+  })
+  .catch(() => {
+    msg.innerText = "Server error. Try again.";
   });
 }
 </script>
