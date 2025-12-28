@@ -1,3 +1,17 @@
+## 🔄 Recent Updates
+- Attendance only allowed if student is within 50m of the admin device
+- Added admin login with session-based authentication
+- Added QR generation directly from admin dashboard
+- Implemented QR expiry (5 minutes) for security
+- Restricted attendance to one entry per student per day
+- Added device/session-based attendance restriction
+- Introduced attendance analytics (calendar view + percentage filter)
+- Fixed Excel CSV export formatting issue
+- Added dark/light mode with persistence
+- Improved UI interactions (About/Contact toggle)
+
+
+
 # QR-Based Attendance System 📱📍
 
 This project is a QR-based attendance system developed as an academic project to reduce proxy attendance in college classrooms using real-time location verification.
@@ -88,20 +102,35 @@ This project is intended for academic use
 
 ## 📸 Screenshots
 
-### Student Attendance Page
+### 🎓 Student Attendance Page
 ![Student Page](screenshots/student-page.png)
 
-### Attendance Success
-![Success](screenshots/attendance-success.png)
+### ✅ Attendance Success
+![Attendance Success](screenshots/attendance-success.png)
 
-### Admin Dashboard
+### 🔐 Admin Login
+![Admin Login](screenshots/admin-login.png)
+
+### 🧑‍💼 Admin Dashboard
 ![Admin Dashboard](screenshots/admin-dashboard.png)
 
-### Google Sheet Data
-![Google Sheet](screenshots/google-sheet.png)
-\### Backend Server Running
+### 📱 QR Generation (Admin)
+![Generate QR](screenshots/admin-generate-qr.png)
 
-!\[Backend](screenshots/backend-running.png)
+### ⏳ QR Expired Validation
+![QR Expired](screenshots/qr-expired.png)
+
+### 📊 Attendance Analytics
+![Analytics](screenshots/attendance-analytics.png)
+
+### 📄 Excel CSV Export (No Formatting Issue)
+![Excel CSV](screenshots/excel-csv.png)
+
+### 📄 Google Sheet Data
+![Google Sheet](screenshots/google-sheet.png)
+
+### ⚙️ Backend Server Running
+![Backend](screenshots/backend-running.png)
 
 
 📌 Limitations & Future Improvements

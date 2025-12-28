@@ -1,49 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>QR Attendance System</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>QR Attendance</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<nav class="navbar">
-    <div class="logo">QR Attendance</div>
-
-    <ul class="nav-links">
-        <li>
-            <strong>About</strong><br>
-            Akash Kumar<br>
-            B.Tech CSE Student<br>
-            Roll: 2024UCP1444
-        </li>
-
-        <li>
-            <strong>Contact</strong><br>
-            ✉️ akashkumar.cse24@gmail.com
-        </li>
-    </ul>
-</nav>
-
+<!-- Theme Toggle -->
 <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
 
-<div id="toast" class="toast"></div>
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="logo">QR Attendance</div>
 
+  <ul class="nav-links">
+    <li onclick="toggleCard('aboutCard')">
+      <strong>About</strong>
+      <div id="aboutCard" class="info-card hidden">
+        Akash Kumar<br>
+        B.Tech CSE Student<br>
+        Roll: 2024UCP1444
+      </div>
+    </li>
+
+    <li onclick="toggleCard('contactCard')">
+      <strong>Contact</strong>
+      <div id="contactCard" class="info-card hidden">
+        📧 akashkumar.cse24@gmail.com
+      </div>
+    </li>
+  </ul>
+</nav>
+
+<!-- Hero Section -->
 <section class="hero">
-    <div class="hero-left">
-        <h1>QR Based Attendance System</h1>
-        <p>
-            A secure, location-based attendance system using
-            QR codes and Google Sheets.
-        </p>
+  <div class="hero-left">
+    <h1>QR Based Attendance System</h1>
+    <p>
+      A secure, location-based attendance system using QR codes and Google Sheets.
+    </p>
 
-        <div class="form-card">
-            <input type="text" id="name" placeholder="Enter Name">
-            <input type="text" id="roll" placeholder="Enter Roll Number">
-            <button onclick="markAttendance()">Mark Attendance</button>
-            <p id="status"></p>
-        </div>
+    <div class="form-card">
+      <input type="text" id="name" placeholder="Enter your name">
+      <input type="text" id="roll" placeholder="Enter roll number">
+      <button onclick="markAttendance()">Mark Attendance</button>
+      <div id="status"></div>
     </div>
+  </div>
 </section>
 
 <script src="script.js"></script>

@@ -11,7 +11,8 @@ body {
     min-height: 100vh;
 }
 
-/* Navbar */
+/* ================= NAVBAR ================= */
+
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -36,9 +37,38 @@ body {
     border-radius: 8px;
     font-size: 14px;
     line-height: 1.4;
+    cursor: pointer; /* ✅ clickable */
+    position: relative;
 }
 
-/* Hero */
+/* ================= INFO CARD (About / Contact) ================= */
+
+.info-card {
+    margin-top: 8px;
+    background: rgba(255,255,255,0.12);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    animation: fadeIn 0.3s ease;
+}
+
+.hidden {
+    display: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ================= HERO ================= */
+
 .hero {
     display: flex;
     justify-content: center;
@@ -61,7 +91,8 @@ body {
     margin-bottom: 25px;
 }
 
-/* Form Card */
+/* ================= FORM CARD ================= */
+
 .form-card {
     background: white;
     color: black;
@@ -98,7 +129,8 @@ body {
     font-weight: bold;
 }
 
-/* Theme Toggle */
+/* ================= THEME TOGGLE ================= */
+
 .theme-toggle {
     position: fixed;
     top: 20px;
@@ -110,7 +142,8 @@ body {
     cursor: pointer;
 }
 
-/* Toast */
+/* ================= TOAST ================= */
+
 .toast {
     position: fixed;
     bottom: 30px;
@@ -137,12 +170,21 @@ body {
     background: #dc3545;
 }
 
-/* Light Mode */
+/* ================= LIGHT MODE ================= */
+
 body.light {
     background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
     color: #111;
 }
 
 body.light .form-card {
-    background: #fff;
+    background: #ffffff;
+}
+
+body.light .nav-links li {
+    background: rgba(0,0,0,0.08);
+}
+
+body.light .info-card {
+    background: rgba(0,0,0,0.12);
 }

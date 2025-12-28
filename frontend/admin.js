@@ -1,19 +1,135 @@
-fetch("http://localhost:3000/admin/attendance")
-    .then(res => res.json())
-    .then(data => {
-        const tbody = document.querySelector("tbody");
+const qrStatus = document.getElementById("qrStatus");
+const qrImage = document.getElementById("qrImage");
 
-        for (let i = 1; i < data.length; i++) {
-            const row = document.createElement("tr");
-            data[i].forEach(cell => {
-                const td = document.createElement("td");
-                td.innerText = cell;
-                row.appendChild(td);
-            });
-            tbody.appendChild(row);
-        }
-    });
+/* ================= GENERATE QR ================= */
+
+function generateQR() {
+  qrStatus.innerText = "Fetching location...";
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      fetch("http://localhost:3000/start-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        qrStatus.innerText = "QR Generated (Valid for 5 minutes)";
+
+        const qrURL =
+          `http://localhost:5500/?sessionId=${data.sessionId}`;
+
+        qrImage.src =
+          `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrURL)}`;
+      })
+      .catch(() => {
+        qrStatus.innerText = "Error generating QR";
+      });
+    },
+    () => {
+      qrStatus.innerText = "Location permission denied";
+    }
+  );
+}
+
+/* ================= LOAD ATTENDANCE ================= */
+
+fetch("http://localhost:3000/admin/attendance", {
+  credentials: "include"
+})
+.then(res => {
+  if (res.status === 401) {
+    window.location.href = "admin-login.html";
+    return;
+  }
+  return res.json();
+})
+.then(data => {
+  if (!data) return;
+  const tbody = document.querySelector("#attendanceTable tbody");
+  tbody.innerHTML = "";
+  data.slice(1).forEach(r => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r[0]}</td>
+      <td>${r[1]?.replace(/^'/,"")}</td>
+      <td>${r[4]}</td>
+      <td>${r[5]}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+});
+
+/* ================= DOWNLOAD CSV ================= */
 
 function downloadCSV() {
-    window.location.href = "http://localhost:3000/admin/download";
+  window.open("http://localhost:3000/admin/download");
 }
+
+/* ================= LOGOUT ================= */
+
+function logout() {
+  fetch("http://localhost:3000/admin/logout", {
+    method: "POST",
+    credentials: "include"
+  }).then(() => {
+    window.location.href = "admin-login.html";
+  });
+}
+
+/* ================= ANALYTICS ================= */
+
+fetch("http://localhost:3000/admin/analytics", {
+  credentials: "include"
+})
+.then(res => res.json())
+.then(data => {
+  if (!data) return;
+
+  // Today count
+  document.getElementById("todayCount").innerText = data.todayCount;
+  document.getElementById("totalDays").innerText = data.totalDays;
+
+  // Calendar
+  const calendar = document.getElementById("calendar");
+  calendar.innerHTML = "";
+
+  Object.entries(data.attendanceByDate).forEach(([date, count]) => {
+    const box = document.createElement("div");
+    box.className = "day-box";
+    box.innerHTML = `
+      <strong>${count}</strong>
+      <span>${date}</span>
+    `;
+    calendar.appendChild(box);
+  });
+
+  // Store for filtering
+  window.studentAnalytics = data.attendanceByStudent;
+});
+
+/* ================= FILTER BY PERCENTAGE ================= */
+
+document.getElementById("percentageFilter").addEventListener("change", () => {
+  const min = Number(percentageFilter.value);
+  const tbody = document.querySelector("#attendanceTable tbody");
+  tbody.innerHTML = "";
+
+  window.studentAnalytics
+    .filter(s => s.percentage >= min)
+    .forEach(s => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${s.name}</td>
+        <td>${s.roll}</td>
+        <td>${s.percentage}%</td>
+        <td>${s.count}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+});

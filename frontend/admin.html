@@ -1,29 +1,71 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="admin.css">
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="admin.css">
 </head>
 <body>
 
-<h1>Admin Dashboard</h1>
+  <div class="admin-container">
+    <h1>Admin Dashboard</h1>
 
-<button onclick="downloadCSV()">Download CSV</button>
+    <!-- QR SECTION -->
+    <div class="qr-section">
+      <div class="controls">
+        <button onclick="generateQR()">Generate QR</button>
+        <button onclick="downloadCSV()">Download CSV</button>
+        <button onclick="logout()">Logout</button>
+      </div>
 
-<table id="table">
-    <thead>
+      <p id="qrStatus"></p>
+      <img id="qrImage" />
+    </div>
+
+    <!-- ================= ANALYTICS ================= -->
+
+    <h2>📊 Attendance Analytics</h2>
+
+    <div class="analytics">
+      <div class="card">
+        <h3>Today Present</h3>
+        <p id="todayCount">0</p>
+      </div>
+
+      <div class="card">
+        <h3>Total Days</h3>
+        <p id="totalDays">0</p>
+      </div>
+    </div>
+
+    <h3>📅 Daily Attendance Calendar</h3>
+    <div id="calendar"></div>
+
+    <h3>🎯 Filter Students by Attendance %</h3>
+    <select id="percentageFilter">
+      <option value="0">All Students</option>
+      <option value="50">≥ 50%</option>
+      <option value="75">≥ 75%</option>
+      <option value="90">≥ 90%</option>
+    </select>
+
+    <!-- ================= ATTENDANCE TABLE ================= -->
+
+    <h2>Attendance Records</h2>
+
+    <table id="attendanceTable">
+      <thead>
         <tr>
-            <th>Name</th>
-            <th>Roll</th>
-            <th>Latitude</th>
-            <th>Longitude</th>
-            <th>Date</th>
-            <th>Time</th>
+          <th>Name</th>
+          <th>Roll</th>
+          <th>Date / %</th>
+          <th>Time / Count</th>
         </tr>
-    </thead>
-    <tbody></tbody>
-</table>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-<script src="admin.js"></script>
+  <script src="admin.js"></script>
 </body>
 </html>
