@@ -7,14 +7,34 @@ const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 
-/* ================= CORS ================= */
+/* ================= BASIC SETUP ================= */
 
 app.use(cors({
   origin: "https://pkds7644-cyber.github.io",
-  credentials: true
 }));
 
 app.use(express.json());
+
+/* ================= SIMPLE TOKEN AUTH ================= */
+
+// single static admin token (perfectly fine for college project)
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "QR_ADMIN_TOKEN_2025";
+
+const ADMIN = {
+  username: "admin",
+  password: "admin123"
+};
+
+function checkAdmin(req, res, next) {
+  const auth = req.headers.authorization;
+  if (!auth) return res.status(401).json({ error: "Unauthorized" });
+
+  const token = auth.split(" ")[1];
+  if (token !== ADMIN_TOKEN) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+  next();
+}
 
 /* ================= GOOGLE SHEETS ================= */
 
@@ -27,16 +47,6 @@ const sheets = google.sheets({ version: "v4", auth });
 
 const SPREADSHEET_ID = "1eisbaQ237bb-j6o9WsjYOPaOcvIiQe8flK9ojs5bqOI";
 const SHEET_NAME = "Sheet1";
-
-/* ================= ADMIN CONFIG ================= */
-
-const ADMIN = {
-  username: "admin",
-  password: "admin123"
-};
-
-// simple static token (demo-grade, reliable)
-const ADMIN_TOKEN = "QR_ADMIN_TOKEN_2025";
 
 /* ================= QR SESSIONS ================= */
 
@@ -75,21 +85,9 @@ app.post("/admin/login", (req, res) => {
   res.json({ success: false });
 });
 
-/* ================= ADMIN AUTH MIDDLEWARE ================= */
-
-function checkAdmin(req, res, next) {
-  const authHeader = req.headers.authorization;
-
-  if (authHeader === `Bearer ${ADMIN_TOKEN}`) {
-    next();
-  } else {
-    res.status(401).json({ error: "Unauthorized" });
-  }
-}
-
 /* ================= START QR SESSION ================= */
 
-app.post("/start-session", (req, res) => {
+app.post("/start-session", checkAdmin, (req, res) => {
   const { latitude, longitude } = req.body;
 
   if (!latitude || !longitude) {
@@ -197,6 +195,8 @@ app.get("/admin/download", checkAdmin, async (req, res) => {
   res.send(csv);
 });
 
+/* ================= ANALYTICS ================= */
+
 app.get("/admin/analytics", checkAdmin, async (req, res) => {
   const data = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
@@ -210,14 +210,13 @@ app.get("/admin/analytics", checkAdmin, async (req, res) => {
   const attendanceByStudent = {};
 
   rows.slice(1).forEach(r => {
-    const name = r[0];
     const roll = r[1]?.replace(/^'/, "");
     const date = r[4];
 
     attendanceByDate[date] = (attendanceByDate[date] || 0) + 1;
 
     if (!attendanceByStudent[roll]) {
-      attendanceByStudent[roll] = { name, roll, count: 0 };
+      attendanceByStudent[roll] = { roll, count: 0 };
     }
     attendanceByStudent[roll].count++;
   });
@@ -228,11 +227,7 @@ app.get("/admin/analytics", checkAdmin, async (req, res) => {
     s.percentage = ((s.count / totalDays) * 100).toFixed(2);
   });
 
-  const today = new Date().toISOString().split("T")[0];
-
   res.json({
-    todayCount: attendanceByDate[today] || 0,
-    totalDays,
     attendanceByDate,
     attendanceByStudent: Object.values(attendanceByStudent)
   });
@@ -242,5 +237,5 @@ app.get("/admin/analytics", checkAdmin, async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log("✅ Server running on port", PORT);
 });
