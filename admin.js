@@ -5,10 +5,11 @@ const qrImage = document.getElementById("qrImage");
 
 const token = localStorage.getItem("adminToken");
 
-// 🔒 If token missing → force login
 if (!token) {
   window.location.href = "admin-login.html";
 }
+
+const API_BASE = "https://qr-attendance-backend-bmgt.onrender.com";
 
 /* ================= GENERATE QR ================= */
 
@@ -17,7 +18,7 @@ function generateQR() {
 
   navigator.geolocation.getCurrentPosition(
     (pos) => {
-      fetch("https://qr-attendance-backend-bmgt.onrender.com/start-session", {
+      fetch(`${API_BASE}/start-session`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -30,6 +31,11 @@ function generateQR() {
       })
       .then(res => res.json())
       .then(data => {
+        if (!data.sessionId) {
+          qrStatus.innerText = "Failed to generate QR";
+          return;
+        }
+
         qrStatus.innerText = "QR Generated (Valid for 5 minutes)";
 
         const qrURL =
@@ -50,7 +56,7 @@ function generateQR() {
 
 /* ================= LOAD ATTENDANCE ================= */
 
-fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/attendance", {
+fetch(`${API_BASE}/admin/attendance`, {
   headers: {
     "Authorization": "Bearer " + token
   }
@@ -81,18 +87,30 @@ fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/attendance", {
   });
 });
 
-/* ================= DOWNLOAD CSV ================= */
+/* ================= DOWNLOAD CSV (FIXED) ================= */
 
 function downloadCSV() {
-  window.open(
-    "https://qr-attendance-backend-bmgt.onrender.com/admin/download",
-    "_blank",
-    {
-      headers: {
-        "Authorization": "Bearer " + token
-      }
+  fetch(`${API_BASE}/admin/download`, {
+    headers: {
+      "Authorization": "Bearer " + token
     }
-  );
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Unauthorized");
+    return res.blob();
+  })
+  .then(blob => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "attendance.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  })
+  .catch(() => {
+    alert("Failed to download CSV. Please login again.");
+  });
 }
 
 /* ================= LOGOUT ================= */
@@ -104,7 +122,7 @@ function logout() {
 
 /* ================= ANALYTICS ================= */
 
-fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/analytics", {
+fetch(`${API_BASE}/admin/analytics`, {
   headers: {
     "Authorization": "Bearer " + token
   }
@@ -118,11 +136,19 @@ fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/analytics", {
   return res.json();
 })
 .then(data => {
-  if (!data) return;
+  if (!data || !data.attendanceByDate) return;
 
-  document.getElementById("todayCount").innerText = data.todayCount;
-  document.getElementById("totalDays").innerText = data.totalDays;
+  /* ✅ FIX todayCount & totalDays */
+  const dates = Object.keys(data.attendanceByDate);
+  const today = new Date().toISOString().split("T")[0];
 
+  const todayCount = data.attendanceByDate[today] || 0;
+  const totalDays = dates.length;
+
+  document.getElementById("todayCount").innerText = todayCount;
+  document.getElementById("totalDays").innerText = totalDays;
+
+  /* Calendar */
   const calendar = document.getElementById("calendar");
   calendar.innerHTML = "";
 
@@ -136,7 +162,7 @@ fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/analytics", {
     calendar.appendChild(box);
   });
 
-  window.studentAnalytics = data.attendanceByStudent;
+  window.studentAnalytics = data.attendanceByStudent || [];
 });
 
 /* ================= FILTER BY PERCENTAGE ================= */
@@ -146,12 +172,12 @@ document.getElementById("percentageFilter").addEventListener("change", () => {
   const tbody = document.querySelector("#attendanceTable tbody");
   tbody.innerHTML = "";
 
-  window.studentAnalytics
-    .filter(s => s.percentage >= min)
+  (window.studentAnalytics || [])
+    .filter(s => Number(s.percentage) >= min)
     .forEach(s => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${s.name}</td>
+        <td>${s.name || "-"}</td>
         <td>${s.roll}</td>
         <td>${s.percentage}%</td>
         <td>${s.count}</td>

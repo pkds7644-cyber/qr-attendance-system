@@ -17,7 +17,7 @@ app.use(express.json());
 
 /* ================= SIMPLE TOKEN AUTH ================= */
 
-// single static admin token (perfectly fine for college project)
+// Static admin token (perfect for college project)
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "QR_ADMIN_TOKEN_2025";
 
 const ADMIN = {
@@ -129,9 +129,14 @@ app.post("/attendance", async (req, res) => {
       });
     }
 
+    /* ===== IST TIME FIX ===== */
     const now = new Date();
-    const date = now.toISOString().split("T")[0];
-    const time = now.toTimeString().split(" ")[0];
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istTime = new Date(now.getTime() + istOffset);
+
+    const date = istTime.toISOString().split("T")[0];
+    const time = istTime.toTimeString().split(" ")[0];
+
     const normalizedRoll = roll.trim().toUpperCase();
 
     const read = await sheets.spreadsheets.values.get({
@@ -174,6 +179,8 @@ app.get("/admin/attendance", checkAdmin, async (req, res) => {
   res.json(data.data.values || []);
 });
 
+/* ================= CSV DOWNLOAD ================= */
+
 app.get("/admin/download", checkAdmin, async (req, res) => {
   const data = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
@@ -195,7 +202,7 @@ app.get("/admin/download", checkAdmin, async (req, res) => {
   res.send(csv);
 });
 
-/* ================= ANALYTICS ================= */
+/* ================= ANALYTICS (FIXED) ================= */
 
 app.get("/admin/analytics", checkAdmin, async (req, res) => {
   const data = await sheets.spreadsheets.values.get({
@@ -204,7 +211,14 @@ app.get("/admin/analytics", checkAdmin, async (req, res) => {
   });
 
   const rows = data.data.values || [];
-  if (rows.length <= 1) return res.json({});
+  if (rows.length <= 1) {
+    return res.json({
+      todayCount: 0,
+      totalDays: 0,
+      attendanceByDate: {},
+      attendanceByStudent: []
+    });
+  }
 
   const attendanceByDate = {};
   const attendanceByStudent = {};
@@ -227,7 +241,13 @@ app.get("/admin/analytics", checkAdmin, async (req, res) => {
     s.percentage = ((s.count / totalDays) * 100).toFixed(2);
   });
 
+  const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
+
   res.json({
+    todayCount: attendanceByDate[today] || 0,
+    totalDays,
     attendanceByDate,
     attendanceByStudent: Object.values(attendanceByStudent)
   });

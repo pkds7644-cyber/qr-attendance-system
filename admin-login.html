@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Admin Login</title>
+
   <style>
     body {
       background: #0f172a;
@@ -9,23 +11,33 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       color: white;
     }
+
     .box {
       background: #020617;
       padding: 30px;
       border-radius: 12px;
       width: 300px;
       text-align: center;
+      box-shadow: 0 0 25px rgba(0,0,0,0.4);
     }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
     input {
       width: 100%;
       padding: 10px;
       margin: 10px 0;
       border-radius: 6px;
       border: none;
+      outline: none;
+      font-size: 14px;
     }
+
     button {
       width: 100%;
       padding: 10px;
@@ -34,6 +46,18 @@
       color: white;
       border-radius: 6px;
       cursor: pointer;
+      font-size: 15px;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #1e40af;
+    }
+
+    #msg {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #f87171;
     }
   </style>
 </head>
@@ -41,42 +65,60 @@
 
 <div class="box">
   <h2>Admin Login</h2>
-  <input id="username" placeholder="Username">
+
+  <input id="username" placeholder="Username" autocomplete="off">
   <input id="password" type="password" placeholder="Password">
+
   <button onclick="login()">Login</button>
+
   <p id="msg"></p>
 </div>
 
 <script>
+const API_BASE = "https://qr-attendance-backend-bmgt.onrender.com";
+
 function login() {
   const msg = document.getElementById("msg");
+  msg.innerText = "";
 
-  fetch("https://qr-attendance-backend-bmgt.onrender.com/admin/login", {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!username || !password) {
+    msg.innerText = "Please enter username and password";
+    return;
+  }
+
+  fetch(`${API_BASE}/admin/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      username: document.getElementById("username").value,
-      password: document.getElementById("password").value
-    })
+    body: JSON.stringify({ username, password })
   })
   .then(res => res.json())
   .then(data => {
     if (data.success && data.token) {
-      // ✅ STORE TOKEN
+      // ✅ Save admin token
       localStorage.setItem("adminToken", data.token);
 
-      // ✅ GO TO DASHBOARD
+      // ✅ Redirect to dashboard
       window.location.href = "admin.html";
     } else {
       msg.innerText = "Invalid credentials";
     }
   })
   .catch(() => {
-    msg.innerText = "Server error. Try again.";
+    msg.innerText = "Server error. Please try again.";
   });
 }
+
+/* ✅ Allow Enter key to submit */
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    login();
+  }
+});
 </script>
 
 </body>
