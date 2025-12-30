@@ -1,3 +1,18 @@
+## 🔔 Latest Update (v1.3)
+
+✔ Improved GPS location handling for real-world usage  
+✔ Attendance radius increased to **200 meters** to handle mobile & desktop GPS variance  
+✔ Fixed IST time mismatch in attendance records  
+✔ Reliable admin authentication (token-based)  
+✔ Analytics & CSV export fully stable  
+
+> This update makes the system reliable across **mobile phones, laptops, and desktops**.
+
+
+
+
+
+
 ## 🔄 Recent Updates
 - Attendance only allowed if student is within 50m of the admin device
 - Added admin login with session-based authentication
@@ -30,7 +45,10 @@ Students scan a QR code to open the attendance page, allow location access, and 
 - Google Sheets used as backend database  
 - Admin dashboard for attendance monitoring  
 - CSV export functionality  
-- Clean and dark-themed user interface  
+- Clean and dark-themed user interface
+-📍 GPS-based attendance with **realistic radius handling (200m)**
+- 📱 Works consistently on **mobile & desktop devices**
+
 
 ---
 
@@ -142,6 +160,27 @@ Can be extended using a database like MySQL or MongoDB
 Admin authentication can be added
 
 Cloud deployment can be implemented
+
+
+
+
+## 📦 Version History
+
+### v1.3 – Production Stable (Current)
+- Increased attendance radius to 200m for GPS reliability
+- Fixed IST time mismatch issue
+- Stable analytics & CSV export
+- Fully deployed backend (Render) + frontend (GitHub Pages)
+
+### v1.2
+- Improved GPS accuracy handling
+- Admin analytics & dashboard fixes
+
+### v1.0
+- QR-based attendance system with location verification
+
+
+
 
 👨‍💻 Author
 
