@@ -122,7 +122,7 @@ app.post("/attendance", async (req, res) => {
       longitude
     );
 
-    if (distance > 50) {
+    if (distance > 200) {
       return res.json({
         success: false,
         message: "You are not within 50 meters of the class location"
