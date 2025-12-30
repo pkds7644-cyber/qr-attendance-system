@@ -4,32 +4,56 @@ const params = new URLSearchParams(window.location.search);
 const sessionId = params.get("sessionId");
 
 function markAttendance() {
-  const name = document.getElementById("name").value;
-  const roll = document.getElementById("roll").value;
+  const name = document.getElementById("name").value.trim();
+  const roll = document.getElementById("roll").value.trim();
   const status = document.getElementById("status");
 
-  navigator.geolocation.getCurrentPosition(pos => {
-    fetch("https://qr-attendance-backend-bmgt.onrender.com/attendance", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        roll,
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        sessionId
+  if (!name || !roll) {
+    status.innerText = "Please enter name and roll number";
+    return;
+  }
+
+  status.innerText = "Fetching location...";
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const accuracy = pos.coords.accuracy; // meters
+
+      /* ❗ Accuracy check (VERY IMPORTANT) */
+      if (accuracy > 80) {
+        status.innerText =
+          "Location accuracy is low. Please move to an open area and try again.";
+        return;
+      }
+
+      fetch("https://qr-attendance-backend-bmgt.onrender.com/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          roll,
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          sessionId
+        })
       })
-    })
-    .then(res => res.json())
-    .then(data => {
-      status.innerText = data.message;
-    })
-    .catch(() => {
-      status.innerText = "Server error. Please try again.";
-    });
-  }, () => {
-    status.innerText = "Location permission denied";
-  });
+        .then(res => res.json())
+        .then(data => {
+          status.innerText = data.message;
+        })
+        .catch(() => {
+          status.innerText = "Server error. Please try again.";
+        });
+    },
+    () => {
+      status.innerText = "Location permission denied";
+    },
+    {
+      enableHighAccuracy: true, // ✅ FIX #1
+      timeout: 15000,
+      maximumAge: 0
+    }
+  );
 }
 
 /* ================= ABOUT / CONTACT TOGGLE ================= */

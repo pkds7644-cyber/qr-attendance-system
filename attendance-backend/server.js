@@ -17,7 +17,6 @@ app.use(express.json());
 
 /* ================= SIMPLE TOKEN AUTH ================= */
 
-// Static admin token (perfect for college project)
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "QR_ADMIN_TOKEN_2025";
 
 const ADMIN = {
@@ -88,7 +87,7 @@ app.post("/admin/login", (req, res) => {
 /* ================= START QR SESSION ================= */
 
 app.post("/start-session", checkAdmin, (req, res) => {
-  const { latitude, longitude } = req.body;
+  const { latitude, longitude, deviceType } = req.body;
 
   if (!latitude || !longitude) {
     return res.status(400).json({ error: "Location missing" });
@@ -98,6 +97,7 @@ app.post("/start-session", checkAdmin, (req, res) => {
   sessions[sessionId] = {
     latitude,
     longitude,
+    deviceType: deviceType || "desktop", // ✅ ADDED
     expiresAt: Date.now() + 5 * 60 * 1000
   };
 
@@ -122,20 +122,25 @@ app.post("/attendance", async (req, res) => {
       longitude
     );
 
-    if (distance > 50) {
+    /* ===== SMART RADIUS LOGIC ===== */
+    const allowedRadius =
+      qrSession.deviceType === "mobile" ? 50 : 150;
+
+    if (distance > allowedRadius) {
       return res.json({
         success: false,
-        message: "You are not within 50 meters of the class location"
+        message: `You are not within ${allowedRadius} meters of class location`
       });
     }
 
-    /* ===== IST TIME FIX ===== */
+    /* ===== IST TIME ===== */
     const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istTime = new Date(now.getTime() + istOffset);
+    const istDate = new Date(
+      now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+    );
 
-    const date = istTime.toISOString().split("T")[0];
-    const time = istTime.toTimeString().split(" ")[0];
+    const date = istDate.toISOString().split("T")[0];
+    const time = istDate.toTimeString().split(" ")[0];
 
     const normalizedRoll = roll.trim().toUpperCase();
 
@@ -202,7 +207,7 @@ app.get("/admin/download", checkAdmin, async (req, res) => {
   res.send(csv);
 });
 
-/* ================= ANALYTICS (FIXED) ================= */
+/* ================= ANALYTICS ================= */
 
 app.get("/admin/analytics", checkAdmin, async (req, res) => {
   const data = await sheets.spreadsheets.values.get({
@@ -241,9 +246,9 @@ app.get("/admin/analytics", checkAdmin, async (req, res) => {
     s.percentage = ((s.count / totalDays) * 100).toFixed(2);
   });
 
-  const today = new Date(Date.now() + 5.5 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
+  const today = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+  ).toISOString().split("T")[0];
 
   res.json({
     todayCount: attendanceByDate[today] || 0,
